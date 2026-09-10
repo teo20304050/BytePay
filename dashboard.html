@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JoTech | Mi Dashboard</title>
+    <title>JoTech | Dashboard</title>
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -11,23 +11,21 @@
         <header class="app-header">
             <div class="user-badge-container">
                 <div class="user-avatar-circle" id="userInitial">JT</div>
-                <div class="user-level-text" id="lblNivelHeader">Cargando...</div>
+                <div class="user-level-text" id="lblNivelHeader">Cliente</div>
             </div>
-            <div class="header-actions">
-                <button class="header-btn" onclick="window.location.href='./soporte.html'">Ayuda</button>
-            </div>
+            <button class="header-btn" onclick="window.location.href='./soporte.html'">Ayuda</button>
         </header>
 
-        <div class="screen-view active" style="padding-bottom: 2rem;">
+        <div class="screen-view">
             <div class="promo-card">
                 <div class="promo-card-tag">Financiamiento Institucional</div>
                 <div class="promo-card-title">JoTech, tecnología para ti</div>
-                <div class="promo-card-desc">Consulta tus cuotas activas y mantén tu crédito al día de forma segura.</div>
+                <div class="promo-card-desc">Consulta tus cuotas activas y mantén tu crédito al día.</div>
             </div>
 
             <div class="info-pill-banner">
-                <div style="font-size: 1.2rem;">✨</div>
-                <div class="info-pill-text" id="lblTipSaludador">Cargando información...</div>
+                <span>✨</span>
+                <span id="lblTipSaludador">Cargando bienvenida...</span>
             </div>
 
             <div class="section-title-row">
@@ -36,31 +34,22 @@
             </div>
 
             <div class="accounts-grid" id="listaArticulosContainer"></div>
-
-            <div class="payment-box">
-                <div class="payment-box-header">
-                    <div>
-                        <div class="payment-box-title">Estado Global</div>
-                        <div style="font-size: 0.95rem; font-weight: 800; color: var(--dark);" id="lblCuotasPendientesTexto">Calculando...</div>
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <!-- BARRA INFERIOR DE NAVEGACIÓN -->
+        <!-- BARRA INFERIOR -->
         <nav class="bottom-nav">
-            <button class="nav-item active" onclick="window.location.href='./dashboard.html'">
+            <a href="./dashboard.html" class="nav-item active">
                 <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                 Inicio
-            </button>
-            <button class="nav-item" onclick="window.location.href='./tienda.html'">
+            </a>
+            <a href="./tienda.html" class="nav-item">
                 <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
                 Tienda (+)
-            </button>
-            <button class="nav-item" onclick="window.location.href='./soporte.html'">
+            </a>
+            <a href="./soporte.html" class="nav-item">
                 <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
                 Ayuda
-            </button>
+            </a>
         </nav>
     </div>
 
@@ -81,37 +70,31 @@
         const db = getFirestore(app);
 
         const contratoKey = localStorage.getItem('jotech_contrato');
-        if (!contratoKey) {
-            window.location.href = './index.html';
-        }
+        if (!contratoKey) window.location.href = './index.html';
 
-        async function initDashboard() {
+        async function init() {
             try {
                 const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
                 const data = await res.json();
-                window.tasaBcv = data && data.promedio ? data.promedio : 36.50;
+                document.getElementById('lblTasaDisplayHome').textContent = data && data.promedio ? data.promedio : "36.50";
             } catch {
-                window.tasaBcv = 36.50;
+                document.getElementById('lblTasaDisplayHome').textContent = "36.50";
             }
-            document.getElementById('lblTasaDisplayHome').textContent = window.tasaBcv;
 
             const docSnap = await getDoc(doc(db, "contratos", contratoKey));
-            if (!docSnap.exists()) {
-                window.location.href = './index.html';
-                return;
-            }
+            if (!docSnap.exists()) { window.location.href = './index.html'; return; }
 
             const cliente = docSnap.data();
             document.getElementById('userInitial').textContent = cliente.nombre.substring(0, 2).toUpperCase();
             document.getElementById('lblNivelHeader').textContent = contratoKey;
-            document.getElementById('lblTipSaludador').innerHTML = `¡Hola, <strong>${cliente.nombre}</strong>! Revisa el estado de tus equipos.`;
+            document.getElementById('lblTipSaludador').innerHTML = `¡Hola, <strong>${cliente.nombre}</strong>! Selecciona un equipo para ver sus cuotas.`;
 
             const articulos = cliente.articulos || [];
             const container = document.getElementById('listaArticulosContainer');
             container.innerHTML = '';
 
             if (articulos.length === 0) {
-                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 1rem;">No hay artículos activos. Visita la Tienda (+).</div>`;
+                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 1rem;">No hay artículos registrados. Usa la Tienda (+).</div>`;
                 return;
             }
 
@@ -122,7 +105,7 @@
                 const inicialUSD = art.precioTotal * (art.porcentajeInicial / 100);
 
                 container.innerHTML += `
-                    <div class="account-card" onclick="window.location.href='./cuotas.html?articulo=${idx}'">
+                    <div class="account-card" onclick="window.location.href='./cuotas.html?index=${idx}'">
                         <div class="account-info-left">
                             <div class="account-icon-box">📱</div>
                             <div>
@@ -140,8 +123,7 @@
                 `;
             });
         }
-        initDashboard();
+        init();
     </script>
 </body>
 </html>
-
