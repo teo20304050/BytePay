@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoTech | Tienda Aliada</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="app-mobile-container">
+        <header class="app-header">
+            <div class="user-badge-container">
+                <div class="user-avatar-circle">JT</div>
+                <div class="user-level-text">Catálogo</div>
+            </div>
+            <button class="header-btn" onclick="window.location.href='./dashboard.html'">Volver</button>
+        </header>
+
+        <div class="screen-view">
+            <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--dark); margin-bottom: 0.3rem;">Tiendas Aliadas / Catálogo</h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">Selecciona un dispositivo para solicitar financiamiento directo.</p>
+
+            <div id="catalogoTiendasContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+
+        <!-- BARRA INFERIOR -->
+        <nav class="bottom-nav">
+            <a href="./dashboard.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                Inicio
+            </a>
+            <a href="./tienda.html" class="nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                Tienda (+)
+            </a>
+            <a href="./soporte.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                Ayuda
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        const contratoKey = localStorage.getItem('jotech_contrato');
+        if (!contratoKey) window.location.href = './index.html';
+
+        const catalogoAliados = [
+            { nombre: "Smartphone Samsung Galaxy A26", precio: 220, proveedor: "TecnoImport C.A.", icono: "📱" },
+            { nombre: "Auriculares Inalámbricos Bluetooth Pro", precio: 45, proveedor: "Global Access Vzla", icono: "🎧" },
+            { nombre: "Laptop Portátil Core i5 8GB RAM", precio: 380, proveedor: "Importaciones Lara", icono: "💻" },
+            { nombre: "Cargador Carga Rápida USB-C 45W", precio: 25, proveedor: "Accesorios Express", icono: "⚡" }
+        ];
+
+        const container = document.getElementById('catalogoTiendasContainer');
+        catalogoAliados.forEach((prod, index) => {
+            container.innerHTML += `
+                <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="font-size: 1.8rem;">${prod.icono}</div>
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.9rem; color: var(--dark);">${prod.nombre}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-muted);">Aliado: ${prod.proveedor}</div>
+                            <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary);">$${prod.precio} USD</div>
+                        </div>
+                    </div>
+                    <button onclick="solicitar(${index})" class="btn-primary" style="width: auto; padding: 0.4rem 0.75rem; font-size: 0.75rem;">Solicitar</button>
+                </div>
+            `;
+        });
+
+        window.solicitar = function(index) {
+            const prod = catalogoAliados[index];
+            let mensaje = `*SOLICITUD TIENDA ALIADA*%0A%0A*Contrato:* ${contratoKey}%0A*Producto:* ${prod.nombre}%0A*Proveedor:* ${prod.proveedor}%0A*Precio:* $${prod.precio} USD`;
+            window.open(`https://api.whatsapp.com/send?phone=584123456789&text=${mensaje}`, '_blank');
+        };
+    </script>
+</body>
+</html>
+
