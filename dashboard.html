@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoTech | Mi Dashboard</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="app-mobile-container">
+        <header class="app-header">
+            <div class="user-badge-container">
+                <div class="user-avatar-circle" id="userInitial">JT</div>
+                <div class="user-level-text" id="lblNivelHeader">Cargando...</div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="window.location.href='./soporte.html'">Ayuda</button>
+            </div>
+        </header>
+
+        <div class="screen-view active" style="padding-bottom: 2rem;">
+            <div class="promo-card">
+                <div class="promo-card-tag">Financiamiento Institucional</div>
+                <div class="promo-card-title">JoTech, tecnología para ti</div>
+                <div class="promo-card-desc">Consulta tus cuotas activas y mantén tu crédito al día de forma segura.</div>
+            </div>
+
+            <div class="info-pill-banner">
+                <div style="font-size: 1.2rem;">✨</div>
+                <div class="info-pill-text" id="lblTipSaludador">Cargando información...</div>
+            </div>
+
+            <div class="section-title-row">
+                <div class="section-title">Tus Artículos en Contrato</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">Tasa BCV: Bs. <span id="lblTasaDisplayHome">...</span></div>
+            </div>
+
+            <div class="accounts-grid" id="listaArticulosContainer"></div>
+
+            <div class="payment-box">
+                <div class="payment-box-header">
+                    <div>
+                        <div class="payment-box-title">Estado Global</div>
+                        <div style="font-size: 0.95rem; font-weight: 800; color: var(--dark);" id="lblCuotasPendientesTexto">Calculando...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BARRA INFERIOR DE NAVEGACIÓN -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="window.location.href='./dashboard.html'">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                Inicio
+            </button>
+            <button class="nav-item" onclick="window.location.href='./tienda.html'">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                Tienda (+)
+            </button>
+            <button class="nav-item" onclick="window.location.href='./soporte.html'">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                Ayuda
+            </button>
+        </nav>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbWF2cTQdwgjaxQqQb3BMPJCKFs0ftEM",
+            authDomain: "jotech-contratos.firebaseapp.com",
+            projectId: "jotech-contratos",
+            storageBucket: "jotech-contratos.firebasestorage.app",
+            messagingSenderId: "109219790720",
+            appId: "1:109219790720:web:84149d0f2199f0adbf0b65"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const contratoKey = localStorage.getItem('jotech_contrato');
+        if (!contratoKey) {
+            window.location.href = './index.html';
+        }
+
+        async function initDashboard() {
+            try {
+                const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                const data = await res.json();
+                window.tasaBcv = data && data.promedio ? data.promedio : 36.50;
+            } catch {
+                window.tasaBcv = 36.50;
+            }
+            document.getElementById('lblTasaDisplayHome').textContent = window.tasaBcv;
+
+            const docSnap = await getDoc(doc(db, "contratos", contratoKey));
+            if (!docSnap.exists()) {
+                window.location.href = './index.html';
+                return;
+            }
+
+            const cliente = docSnap.data();
+            document.getElementById('userInitial').textContent = cliente.nombre.substring(0, 2).toUpperCase();
+            document.getElementById('lblNivelHeader').textContent = contratoKey;
+            document.getElementById('lblTipSaludador').innerHTML = `¡Hola, <strong>${cliente.nombre}</strong>! Revisa el estado de tus equipos.`;
+
+            const articulos = cliente.articulos || [];
+            const container = document.getElementById('listaArticulosContainer');
+            container.innerHTML = '';
+
+            if (articulos.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 1rem;">No hay artículos activos. Visita la Tienda (+).</div>`;
+                return;
+            }
+
+            articulos.forEach((art, idx) => {
+                const pagadas = art.cuotasPagadas || 0;
+                const total = art.totalCuotas || 0;
+                const pendientes = total - pagadas;
+                const inicialUSD = art.precioTotal * (art.porcentajeInicial / 100);
+
+                container.innerHTML += `
+                    <div class="account-card" onclick="window.location.href='./cuotas.html?articulo=${idx}'">
+                        <div class="account-info-left">
+                            <div class="account-icon-box">📱</div>
+                            <div>
+                                <div class="account-title">${art.nombre}</div>
+                                <div class="account-subtitle">Inicial: ${art.porcentajeInicial}% ($${inicialUSD.toFixed(2)}) | ${pagadas}/${total} cuotas</div>
+                            </div>
+                        </div>
+                        <div class="account-info-right">
+                            <div class="account-card-value">$${Number(art.precioTotal).toFixed(2)}</div>
+                            <div class="account-card-status" style="color: ${pendientes === 0 ? 'var(--success)' : 'var(--primary)'};">
+                                ${pendientes === 0 ? 'Solvente' : 'Ver Cuotas ›'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        initDashboard();
+    </script>
+</body>
+</html>
+
