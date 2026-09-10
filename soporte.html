@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoTech | Soporte y Ayuda</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="app-mobile-container">
+        <header class="app-header">
+            <div class="user-badge-container">
+                <div class="user-avatar-circle">JT</div>
+                <div class="user-level-text">Soporte</div>
+            </div>
+            <button class="header-btn" onclick="window.location.href='./dashboard.html'">Volver</button>
+        </header>
+
+        <div class="screen-view">
+            <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--dark); margin-bottom: 0.3rem;">Soporte JoTech</h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">Preguntas frecuentes y control de sesión.</p>
+
+            <div class="faq-box" style="background:#fff; border:1px solid var(--border-color); border-radius:10px; padding:0.9rem; margin-bottom:0.65rem;">
+                <div style="font-size:0.85rem; font-weight:700; color:var(--primary); margin-bottom:0.2rem;">¿Cómo se calculan los pagos?</div>
+                <div style="font-size:0.8rem; color:var(--text-muted);">Multiplicando el monto en divisas por la tasa oficial BCV del día.</div>
+            </div>
+
+            <button type="button" class="btn-outline" id="btnCerrarSesionApp" style="color: var(--danger); border-color: #fca5a5; margin-top: 1.5rem;">Cerrar Sesión Activa</button>
+        </div>
+
+        <!-- BARRA INFERIOR -->
+        <nav class="bottom-nav">
+            <a href="./dashboard.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                Inicio
+            </a>
+            <a href="./tienda.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                Tienda (+)
+            </a>
+            <a href="./soporte.html" class="nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                Ayuda
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        document.getElementById('btnCerrarSesionApp').addEventListener('click', () => {
+            localStorage.removeItem('jotech_contrato');
+            window.location.href = './index.html';
+        });
+    </script>
+</body>
+</html>
