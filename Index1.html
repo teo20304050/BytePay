@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App de Créditos y Caches</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-hover: #1e40af;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border: #cbd5e1;
+            --radius: 12px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Control de pantallas (Paginación) */
+        .screen {
+            display: none;
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 0.3rem;
+            font-weight: 800;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.4rem;
+            color: var(--text-main);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text-main);
+            background-color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+        }
+
+        .btn {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.85rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+        }
+        .btn-success:hover {
+            background-color: #15803d;
+        }
+
+        .btn-secondary {
+            background-color: #64748b;
+        }
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+
+        .info-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1.25rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.6rem;
+            font-size: 0.95rem;
+        }
+
+        .info-row span:last-child {
+            font-weight: 700;
+        }
+
+        .admin-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .admin-link a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        .admin-link a:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+
+        th, td {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+
+        th {
+            background-color: #f1f5f9;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ================= PANTALLA 1: INGRESO DE CLIENTE ================= -->
+        <div id="screen-login" class="screen active">
+            <header>
+                <h1>Portal de Clientes</h1>
+                <p>Introduce tu número de contrato para consultar tu estado de cuenta.</p>
+            </header>
+
+            <div class="form-group">
+                <label for="inputContratoLogin">Número de Contrato o Cédula</label>
+                <input type="text" id="inputContratoLogin" placeholder="Ej: C-1001" style="text-transform: uppercase;">
+            </div>
+
+            <button type="button" class="btn" id="btnLoginCliente">Consultar Contrato</button>
+
+            <div class="admin-link">
+                <a href="#" id="linkIrAdmin">🔐 Acceso Administrativo (Empresa)</a>
+            </div>
+        </div>
+
+
+        <!-- ================= PANTALLA 2: PANEL DEL CLIENTE ================= -->
+        <div id="screen-client-panel" class="screen">
+            <header>
+                <h1>Hola, <span id="lblNombreCliente" style="color: var(--primary);">Cliente</span></h1>
+                <p>Contrato N°: <span id="lblCodigoContrato" style="font-weight: bold;"></span></p>
+            </header>
+
+            <div class="info-box">
+                <div class="info-row">
+                    <span>Monto Total del Artículo:</span>
+                    <span id="lblMontoTotal">$0.00</span>
+                </div>
+                <div class="info-row">
+                    <span>Tasa BCV Actual:</span>
+                    <span>Bs. <input type="number" id="inputTasaBcv" value="36.50" step="any" style="width: 80px; padding: 0.2rem 0.4rem; display: inline-block;"></span>
+                </div>
+                <div class="info-row">
+                    <span>Cuotas Pagadas:</span>
+                    <span id="lblCuotasPagadas" style="color: var(--success);">0</span>
+                </div>
+                <div class="info-row">
+                    <span>Cuotas Pendientes:</span>
+                    <span id="lblCuotasPendientes" style="color: var(--danger);">0</span>
+                </div>
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.8rem 0;">
+                <div class="info-row" style="font-size: 1.05rem;">
+                    <span>Valor de la Cuota a Pagar:</span>
+                    <span id="lblValorCuota" style="color: var(--primary);">$0.00 (Bs. 0.00)</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="inputReferencia">Número de Referencia (Pago Móvil / Transferencia)</label>
+                <input type="text" id="inputReferencia" placeholder="Últimos 4 o 6 dígitos">
+            </div>
+
+            <button type="button" class="btn btn-success" id="btnEnviarWs">Notificar Pago por WhatsApp 📱</button>
+            <button type="button" class="btn btn-secondary" id="btnVolverLogin" style="margin-top: 0.5rem;">Cerrar Sesión</button>
+        </div>
+
+
+        <!-- ================= PANTALLA 3: LOGIN DE ADMINISTRADOR ================= -->
+        <div id="screen-admin-login" class="screen">
+            <header>
+                <h1>Acceso Administrativo</h1>
+                <p>Área exclusiva para personal autorizado de la empresa.</p>
+            </header>
+
+            <div class="form-group">
+                <label for="inputAdminPass">Contraseña de Administrador</label>
+                <input type="password" id="inputAdminPass" placeholder="Introduce la clave">
+            </div>
+
+            <button type="button" class="btn" id="btnLoginAdmin">Entrar al Panel</button>
+            <button type="button" class="btn btn-secondary" id="btnVolverLoginDesdeAdmin" style="margin-top: 0.5rem;">Volver</button>
+        </div>
+
+
+        <!-- ================= PANTALLA 4: PANEL DE ADMINISTRADOR ================= -->
+        <div id="screen-admin-panel" class="screen">
+            <header>
+                <h1>Gestión de Contratos</h1>
+                <p>Crea y administra los contratos de tus clientes en tiempo real.</p>
+            </header>
+
+            <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1rem; margin-bottom: 0.8rem; color: var(--primary);">Registrar Nuevo Contrato</h3>
+                <div class="form-group" style="margin-bottom: 0.8rem;">
+                    <input type="text" id="nuevoCodigo" placeholder="Código (Ej: C-1005)" style="text-transform: uppercase;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0.8rem;">
+                    <input type="text" id="nuevoNombre" placeholder="Nombre Completo del Cliente">
+                </div>
+                <div class="form-group" style="margin-bottom: 0.8rem;">
+                    <input type="number" id="nuevoMonto" placeholder="Monto Total del Artículo ($)">
+                </div>
+                <div class="form-group" style="margin-bottom: 0.8rem;">
+                    <input type="number" id="nuevoTotalCuotas" placeholder="Cantidad Total de Cuotas" value="3">
+                </div>
+                <button type="button" class="btn btn-success" id="btnGuardarContrato">Guardar Contrato</button>
+            </div>
+
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Contratos Activos en el Sistema:</h3>
+            <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Cliente</th>
+                            <th>Total ($)</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaAdminContratos"></tbody>
+                </table>
+            </div>
+
+            <button type="button" class="btn btn-secondary" id="btnCerrarAdmin" style="margin-top: 1.5rem;">Cerrar Sesión de Admin</button>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 Sistema de Caches y Créditos</p>
+        </footer>
+    </div>
+
+    <script>
+        // Inicializar base de datos local predeterminada o cargar desde localStorage si existe
+        function obtenerBaseDatos() {
+            const data = localStorage.getItem('bd_contratos_empresa');
+            if (data) {
+                return JSON.parse(data);
+            } else {
+                const inicial = {
+                    "C-1001": { nombre: "José Yépez", montoTotal: 300, cuotasPagadas: 1, totalCuotas: 3 },
+                    "C-1002": { nombre: "María Rodríguez", montoTotal: 450, cuotasPagadas: 0, totalCuotas: 4 }
+                };
+                localStorage.setItem('bd_contratos_empresa', JSON.stringify(inicial));
+                return inicial;
+            }
+        }
+
+        let contratosDB = obtenerBaseDatos();
+        let contratoActualKey = null;
+
+        // Control de pantallas (Paginación interna)
+        function cambiarPantalla(idPantalla) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(idPantalla).classList.add('active');
+        }
+
+        // --- LÓGICA CLIENTE ---
+        document.getElementById('btnLoginCliente').addEventListener('click', () => {
+            const codigo = document.getElementById('inputContratoLogin').value.trim().toUpperCase();
+            if (contratosDB[codigo]) {
+                contratoActualKey = codigo;
+                cargarDatosCliente(codigo);
+                cambiarPantalla('screen-client-panel');
+            } else {
+                alert("El número de contrato no existe en el sistema.");
+            }
+        });
+
+        function cargarDatosCliente(codigo) {
+            const cliente = contratosDB[codigo];
+            document.getElementById('lblNombreCliente').textContent = cliente.nombre;
+            document.getElementById('lblCodigoContrato').textContent = codigo;
+            document.getElementById('lblMontoTotal').textContent = '$' + cliente.montoTotal.toFixed(2);
+            document.getElementById('lblCuotasPagadas').textContent = cliente.cuotasPagadas;
+            
+            const pendientes = cliente.totalCuotas - cliente.cuotasPagadas;
+            document.getElementById('lblCuotasPendientes').textContent = pendientes;
+
+            const valorCuotaUSD = cliente.montoTotal / cliente.totalCuotas;
+            const tasa = parseFloat(document.getElementById('inputTasaBcv').value) || 1;
+            const valorCuotaBs = valorCuotaUSD * tasa;
+
+            document.getElementById('lblValorCuota').textContent = `$${valorCuotaUSD.toFixed(2)} (Bs. ${valorCuotaBs.toLocaleString('es-VE', {minimumFractionDigits: 2})})`;
+        }
+
+        document.getElementById('inputTasaBcv').addEventListener('input', () => {
+            if (contratoActualKey) cargarDatosCliente(contratoActualKey);
+        });
+
+        document.getElementById('btnVolverLogin').addEventListener('click', () => {
+            contratoActualKey = null;
+            document.getElementById('inputContratoLogin').value = '';
+            cambiarPantalla('screen-login');
+        });
+
+        // Enviar WhatsApp desde panel de cliente
+        document.getElementById('btnEnviarWs').addEventListener('click', () => {
+            const referencia = document.getElementById('inputReferencia').value.trim();
+            if (!referencia) {
+                alert("Por favor, ingresa el número de referencia del pago.");
+                return;
+            }
+
+            const cliente = contratosDB[contratoActualKey];
+            const tasa = document.getElementById('inputTasaBcv').value;
+            const valorCuotaUSD = (cliente.montoTotal / cliente.totalCuotas).toFixed(2);
+            const valorCuotaBs = (valorCuotaUSD * tasa).toLocaleString('es-VE', {minimumFractionDigits: 2});
+            const pendientes = cliente.totalCuotas - cliente.cuotasPagadas;
+
+            let mensaje = `*🔔 REPORTE DE PAGO / CUOTA*%0A%0A`;
+            mensaje += `👤 *Cliente:* ${cliente.nombre}%0A`;
+            mensaje += `📋 *Contrato:* ${contratoActualKey}%0A`;
+            mensaje += `💵 *Monto Cuota:* $${valorCuotaUSD} (Bs. ${valorCuotaBs})%0A`;
+            mensaje += `📈 *Tasa BCV:* Bs. ${tasa}%0A`;
+            mensaje += `📊 *Estado:* Pagó cuota. Le restan ${pendientes - 1 > 0 ? pendientes - 1 : 0} cuotas.%0A`;
+            mensaje += `🔢 *Referencia:* ${referencia}%0A`;
+
+            // CONFIGURA TU NÚMERO DE WHATSAPP AQUÍ
+            const telefonoEmpresa = "584123456789";
+            window.open(`https://api.whatsapp.com/send?phone=${telefonoEmpresa}&text=${mensaje}`, '_blank');
+        });
+
+
+        // --- LÓGICA ADMINISTRADOR ---
+        document.getElementById('linkIrAdmin').addEventListener('click', (e) => {
+            e.preventDefault();
+            cambiarPantalla('screen-admin-login');
+        });
+
+        document.getElementById('btnVolverLoginDesdeAdmin').addEventListener('click', () => {
+            document.getElementById('inputAdminPass').value = '';
+            cambiarPantalla('screen-login');
+        });
+
+        document.getElementById('btnLoginAdmin').addEventListener('click', () => {
+            const pass = document.getElementById('inputAdminPass').value;
+            // Contraseña de administrador configurada estáticamente como ejemplo: "admin123"
+            if (pass === "admin123") {
+                document.getElementById('inputAdminPass').value = '';
+                actualizarTablaAdmin();
+                cambiarPantalla('screen-admin-panel');
+            } else {
+                alert("Contraseña incorrecta.");
+            }
+        });
+
+        document.getElementById('btnCerrarAdmin').addEventListener('click', () => {
+            cambiarPantalla('screen-login');
+        });
+
+        document.getElementById('btnGuardarContrato').addEventListener('click', () => {
+            const codigo = document.getElementById('nuevoCodigo').value.trim().toUpperCase();
+            const nombre = document.getElementById('nuevoNombre').value.trim();
+            const monto = parseFloat(document.getElementById('nuevoMonto').value);
+            const totalCuotas = parseInt(document.getElementById('nuevoTotalCuotas').value);
+
+            if (!codigo || !nombre || !monto || !totalCuotas) {
+                alert("Por favor, llena todos los campos para registrar el contrato.");
+                return;
+            }
+
+            contratosDB[codigo] = {
+                nombre: nombre,
+                montoTotal: monto,
+                cuotasPagadas: 0,
+                totalCuotas: totalCuotas
+            };
+
+            localStorage.setItem('bd_contratos_empresa', JSON.stringify(contratosDB));
+            actualizarTablaAdmin();
+
+            // Limpiar campos
+            document.getElementById('nuevoCodigo').value = '';
+            document.getElementById('nuevoNombre').value = '';
+            document.getElementById('nuevoMonto').value = '';
+            alert("¡Contrato registrado exitosamente!");
+        });
+
+        function actualizarTablaAdmin() {
+            const tbody = document.getElementById('tablaAdminContratos');
+            tbody.innerHTML = '';
+            for (let codigo in contratosDB) {
+                const c = contratosDB[codigo];
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${codigo}</strong></td>
+                        <td>${c.nombre}</td>
+                        <td>$${c.montoTotal}</td>
+                        <td><button onclick="eliminarContrato('${codigo}')" style="background: var(--danger); color: white; border: none; padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer;">Eliminar</button></td>
+                    </tr>
+                `;
+            }
+        }
+
+        window.eliminarContrato = function(codigo) {
+            if (confirm(`¿Estás seguro de eliminar el contrato ${codigo}?`)) {
+                delete contratosDB[codigo];
+                localStorage.setItem('bd_contratos_empresa', JSON.stringify(contratosDB));
+                actualizarTablaAdmin();
+            }
+        };
+    </script>
+</body>
+</html>
