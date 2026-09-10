@@ -5,5 +5,13 @@
   "display": "standalone",
   "background_color": "#f1f5f9",
   "theme_color": "#1e3a8a",
-  "description": "Sistema de control de cuotas y contratos."
+  "description": "Sistema de control de cuotas y contratos.",
+  "icons": [
+    {
+      "src": "./imagen.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
