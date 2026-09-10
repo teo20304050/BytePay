@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoTech | Detalle de Cuotas</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="app-mobile-container">
+        <header class="app-header">
+            <div class="user-badge-container">
+                <div class="user-avatar-circle" id="userInitial">JT</div>
+                <div class="user-level-text" id="lblDetalleContratoSub">Cuotas</div>
+            </div>
+            <button class="header-btn" onclick="window.location.href='./dashboard.html'">Volver</button>
+        </header>
+
+        <div class="screen-view">
+            <h2 style="font-size: 1.1rem; font-weight: 800; color: var(--dark); margin-bottom: 0.3rem;" id="lblDetalleArticuloNombre">Detalle del Equipo</h2>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;" id="lblDetalleDesgloseInicial">Cargando información financiera...</div>
+
+            <div style="background: var(--primary-light); border: 1px solid #bfdbfe; border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem;">
+                <div style="font-size: 1.25rem; font-weight: 800; color: var(--dark);" id="lblDetallePrecioTotal">$0.00 USD</div>
+                <div style="font-size: 0.75rem; color: var(--primary); font-weight: 700; margin-top: 4px;" id="lblDetalleResumenCuotas">0 de 0 pagadas</div>
+            </div>
+
+            <div class="section-title-row">
+                <div class="section-title">Cronograma de Pagos</div>
+            </div>
+
+            <div id="listaCuotasDetalladas" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem;"></div>
+
+            <button type="button" class="btn-primary" id="btnReportarPagoArticulo">Reportar Pago por WhatsApp</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbWF2cTQdwgjaxQqQb3BMPJCKFs0ftEM",
+            authDomain: "jotech-contratos.firebaseapp.com",
+            projectId: "jotech-contratos",
+            storageBucket: "jotech-contratos.firebasestorage.app",
+            messagingSenderId: "109219790720",
+            appId: "1:109219790720:web:84149d0f2199f0adbf0b65"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const contratoKey = localStorage.getItem('jotech_contrato');
+        const urlParams = new URLSearchParams(window.location.search);
+        const artIndex = parseInt(urlParams.get('index')) || 0;
+
+        if (!contratoKey) window.location.href = './index.html';
+
+        async function initCuotas() {
+            let tasaBcv = 36.50;
+            try {
+                const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                const data = await res.json();
+                if (data && data.promedio) tasaBcv = data.promedio;
+            } catch {}
+
+            const docSnap = await getDoc(doc(db, "contratos", contratoKey));
+            if (!docSnap.exists()) { window.location.href = './dashboard.html'; return; }
+
+            const cliente = docSnap.data();
+            const art = cliente.articulos && cliente.articulos[artIndex];
+            if (!art) { window.location.href = './dashboard.html'; return; }
+
+            document.getElementById('userInitial').textContent = cliente.nombre.substring(0, 2).toUpperCase();
+            document.getElementById('lblDetalleContratoSub').textContent = contratoKey;
+            document.getElementById('lblDetalleArticuloNombre').textContent = art.nombre;
+            document.getElementById('lblDetallePrecioTotal').textContent = `$${Number(art.precioTotal).toFixed(2)} USD`;
+
+            const inicialUSD = art.precioTotal * (art.porcentajeInicial / 100);
+            const restante = art.precioTotal - inicialUSD;
+            const pagadas = art.cuotasPagadas || 0;
+            const total = art.totalCuotas || 0;
+
+            document.getElementById('lblDetalleDesgloseInicial').textContent = `Titular: ${cliente.nombre} | Inicial (${art.porcentajeInicial}%): $${inicialUSD.toFixed(2)}`;
+            document.getElementById('lblDetalleResumenCuotas').textContent = `${pagadas} de ${total} cuotas pagadas`;
+
+            const container = document.getElementById('listaCuotasDetalladas');
+            container.innerHTML = '';
+            const historial = art.historialPagos || {};
+            const valorCuotaUSD = restante / total;
+
+            // Inicial
+            const inicialPagada = historial['inicial'] && historial['inicial'].pagada;
+            container.innerHTML += `
+                <div class="cuota-item-card ${inicialPagada ? 'pagada' : 'pendiente'}">
+                    <div>
+                        <div style="font-weight: 800; font-size: 0.85rem;">Cuota Inicial (${art.porcentajeInicial}%)</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${inicialPagada ? `Ref: ${historial['inicial'].referencia}` : 'Pendiente'}</div>
+                        <div style="font-size: 0.75rem; color: var(--primary); font-weight: 700;">$${inicialUSD.toFixed(2)} (Bs. ${(inicialUSD * tasaBcv).toLocaleString('es-VE', {minimumFractionDigits: 2})})</div>
+                    </div>
+                    <div>${inicialPagada ? '<span class="badge badge-success">Pagada</span>' : '<span class="badge badge-warning">Pendiente</span>'}</div>
+                </div>
+            `;
+
+            // Cuotas
+            for (let i = 1; i <= total; i++) {
+                const esPagada = i <= pagadas;
+                const info = historial[i] || {};
+                const montoBs = valorCuotaUSD * (esPagada && info.tasa ? info.tasa : tasaBcv);
+
+                container.innerHTML += `
+                    <div class="cuota-item-card ${esPagada ? 'pagada' : 'pendiente'}">
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.85rem;">Cuota #${i} de ${total}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${esPagada ? `Ref: ${info.referencia}` : 'Pendiente'}</div>
+                            <div style="font-size: 0.75rem; color: var(--primary); font-weight: 700;">$${valorCuotaUSD.toFixed(2)} (Bs. ${montoBs.toLocaleString('es-VE', {minimumFractionDigits: 2})})</div>
+                        </div>
+                        <div>${esPagada ? '<span class="badge badge-success">Pagada</span>' : '<span class="badge badge-warning">Pendiente</span>'}</div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('btnReportarPagoArticulo').onclick = () => {
+                let itemAPagar = "", montoUSD = 0;
+                if (!inicialPagada) {
+                    itemAPagar = `Inicial (${art.porcentajeInicial}%)`;
+                    montoUSD = inicialUSD.toFixed(2);
+                } else if (pagadas < total) {
+                    itemAPagar = `Cuota #${pagadas + 1} de ${total}`;
+                    montoUSD = valorCuotaUSD.toFixed(2);
+                } else {
+                    alert("Artículo solvente."); return;
+                }
+                const ref = prompt(`Referencia de pago para [${itemAPagar}] ($${montoUSD}):`, "12345");
+                if (!ref) return;
+
+                let mensaje = `*REPORTE DE PAGO JOTECH*%0A%0A*Contrato:* ${contratoKey}%0A*Artículo:* ${art.nombre}%0A*Concepto:* ${itemAPagar}%0A*Monto:* $${montoUSD}%0A*Ref:* ${ref}`;
+                window.open(`https://api.whatsapp.com/send?phone=584123456789&text=${mensaje}`, '_blank');
+            };
+        }
+        initCuotas();
+    </script>
+</body>
+</html>
+
