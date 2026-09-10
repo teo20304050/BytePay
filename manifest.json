@@ -1,0 +1,12 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "JoTech",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "JoTech",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "id": "0000"
+}
