@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoTech | Login Admin</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="app-mobile-container">
+        <header class="app-header">
+            <div class="user-badge-container">
+                <div class="user-avatar-circle" style="background:var(--dark);">ADM</div>
+                <div class="user-level-text">Seguridad</div>
+            </div>
+            <button class="header-btn" onclick="window.location.href='./index.html'">Volver</button>
+        </header>
+
+        <div class="screen-view">
+            <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--dark); margin-bottom: 0.3rem;">Panel Administrativo</h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">Introduce la clave corporativa de acceso.</p>
+
+            <div class="form-group">
+                <label for="inputAdminPass">Contraseña</label>
+                <input type="password" id="inputAdminPass" placeholder="••••••••">
+            </div>
+
+            <button type="button" class="btn-primary" id="btnLoginAdmin">Autenticar Sistema</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('btnLoginAdmin').addEventListener('click', () => {
+            const pass = document.getElementById('inputAdminPass').value;
+            if (pass === "admin123") {
+                localStorage.setItem('jotech_admin', 'true');
+                window.location.href = './admin-panel.html';
+            } else {
+                alert("Contraseña incorrecta.");
+            }
+        });
+    </script>
+</body>
+</html>
+
