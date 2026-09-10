@@ -470,7 +470,6 @@
             }
 
             try {
-                // Guardar directamente en Firestore usando el código como ID del documento
                 await setDoc(doc(db, "contratos", codigo), {
                     nombre: nombre,
                     montoTotal: monto,
