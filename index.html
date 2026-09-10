@@ -15,7 +15,7 @@
             </div>
         </header>
 
-        <div class="screen-view active">
+        <div class="screen-view">
             <div style="text-align: center; margin: 2rem 0 1.5rem 0;">
                 <div style="width: 60px; height: 60px; background: var(--primary); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 1.6rem; box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);">JT</div>
                 <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--dark); margin-top: 0.75rem;">JoTech System</h1>
@@ -30,14 +30,14 @@
             <button type="button" class="btn-primary" id="btnLoginCliente">Acceder a mis Contratos</button>
 
             <div style="text-align: center; margin-top: 2rem;">
-                <a href="./admin.html" style="color: var(--primary); font-size: 0.8rem; font-weight: 700; text-decoration: none;">Acceso Administrativo</a>
+                <a href="./admin-login.html" style="color: var(--primary); font-size: 0.8rem; font-weight: 700; text-decoration: none;">Acceso Administrativo</a>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBbWF2cTQdwgjaxQqQb3BMPJCKFs0ftEM",
@@ -53,25 +53,19 @@
 
         document.getElementById('btnLoginCliente').addEventListener('click', async () => {
             const codigo = document.getElementById('inputContratoLogin').value.trim().toUpperCase();
-            if (!codigo) {
-                alert("Por favor introduce un número de contrato.");
-                return;
-            }
+            if (!codigo) { alert("Introduce un número de contrato."); return; }
 
             try {
-                const docRef = doc(db, "contratos", codigo);
-                const docSnap = await getDoc(docRef);
-
+                const docSnap = await getDoc(doc(db, "contratos", codigo));
                 if (docSnap.exists()) {
-                    // Guardamos el contrato activo en la sesión del navegador y redirigimos a la vista principal
                     localStorage.setItem('jotech_contrato', codigo);
                     window.location.href = './dashboard.html';
                 } else {
-                    alert("El número de contrato no se encuentra registrado.");
+                    alert("El contrato no existe en el sistema.");
                 }
             } catch (e) {
                 console.error(e);
-                alert("Error al conectar con la base de datos.");
+                alert("Error de conexión con la base de datos.");
             }
         });
     </script>
