@@ -1,0 +1,15 @@
+{
+  "background_color": "#0045f8",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "JoTech",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "JoTech",
+  "start_url": "/",
+  "theme_color": "#966f6f",
+  "id": "0000",
+  "categories": [
+    "business"
+  ]
+}
