@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoTech | Panel de Control Admin</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="app-mobile-container" style="max-width: 600px;">
+        <header class="app-header">
+            <div class="user-badge-container">
+                <div class="user-avatar-circle" style="background:var(--dark);">ADM</div>
+                <div class="user-level-text">Control Total</div>
+            </div>
+            <button class="header-btn" onclick="localStorage.removeItem('jotech_admin'); window.location.href='./index.html';">Cerrar Sesión</button>
+        </header>
+
+        <div class="screen-view">
+            <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--dark); margin-bottom: 0.3rem;">Gestión de Contratos y Equipos</h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">Crea contratos, configura iniciales y registra abonos en la nube.</p>
+
+            <!-- Formulario Contrato Base -->
+            <div style="background: var(--primary-light); padding: 1rem; border-radius: 10px; border: 1px solid #bfdbfe; margin-bottom: 1rem;">
+                <h3 style="font-size: 0.85rem; color: var(--primary); font-weight: 800; margin-bottom: 0.5rem;">1. Registrar Contrato Base</h3>
+                <div class="form-group" style="margin-bottom: 0.4rem;"><input type="text" id="adminRegCodigo" placeholder="Nro Contrato (Ej: C-1001)" style="text-transform: uppercase;"></div>
+                <div class="form-group" style="margin-bottom: 0.6rem;"><input type="text" id="adminRegNombre" placeholder="Nombre Completo del Titular"></div>
+                <button type="button" class="btn-primary" id="btnGuardarContratoBase">Guardar Contrato</button>
+            </div>
+
+            <!-- Formulario Artículo con Inicial -->
+            <div style="background: #f8fafc; padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 1.5rem;">
+                <h3 style="font-size: 0.85rem; color: var(--dark); font-weight: 800; margin-bottom: 0.5rem;">2. Añadir Artículo con Inicial (%)</h3>
+                <div class="form-group" style="margin-bottom: 0.4rem;"><input type="text" id="adminArtContrato" placeholder="Contrato Destino (Ej: C-1001)" style="text-transform: uppercase;"></div>
+                <div class="form-group" style="margin-bottom: 0.4rem;"><input type="text" id="adminArtNombre" placeholder="Nombre del Equipo (Ej: Smartphone Samsung)"></div>
+                <div class="form-group" style="margin-bottom: 0.4rem;"><input type="number" id="adminArtPrecio" placeholder="Precio Total ($)"></div>
+                <div class="form-group" style="margin-bottom: 0.4rem;">
+                    <select id="adminArtPorcentaje">
+                        <option value="10">Inicial 10%</option>
+                        <option value="20">Inicial 20%</option>
+                        <option value="30" selected>Inicial 30%</option>
+                        <option value="40">Inicial 40%</option>
+                        <option value="50">Inicial 50%</option>
+                        <option value="60">Inicial 60%</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0.6rem;"><input type="number" id="adminArtCuotas" placeholder="Número de Cuotas" value="6"></div>
+                <button type="button" class="btn-primary" id="btnAgregarArticuloContrato" style="background: var(--success);">Añadir Artículo al Contrato</button>
+            </div>
+
+            <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                    <tbody id="tablaAdminContratosApp"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, setDoc, doc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbWF2cTQdwgjaxQqQb3BMPJCKFs0ftEM",
+            authDomain: "jotech-contratos.firebaseapp.com",
+            projectId: "jotech-contratos",
+            storageBucket: "jotech-contratos.firebasestorage.app",
+            messagingSenderId: "109219790720",
+            appId: "1:109219790720:web:84149d0f2199f0adbf0b65"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        if (localStorage.getItem('jotech_admin') !== 'true') {
+            window.location.href = './admin-login.html';
+        }
+
+        let contratosDB = {};
+        let tasaBcv = 36.50;
+
+        async function initAdmin() {
+            try {
+                const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                const data = await res.json();
+                if (data && data.promedio) tasaBcv = data.promedio;
+            } catch {}
+
+            onSnapshot(collection(db, "contratos"), (snapshot) => {
+                contratosDB = {};
+                snapshot.forEach((docSnap) => {
+                    contratosDB[docSnap.id] = docSnap.data();
+                });
+                renderTablaAdmin();
+            });
+        }
+        initAdmin();
+
+        document.getElementById('btnGuardarContratoBase').addEventListener('click', async () => {
+            const codigo = document.getElementById('adminRegCodigo').value.trim().toUpperCase();
+            const nombre = document.getElementById('adminRegNombre').value.trim();
+            if (!codigo || !nombre) { alert("Complete los campos."); return; }
+
+            try {
+                const existente = contratosDB[codigo] || { articulos: [] };
+                await setDoc(doc(db, "contratos", codigo), { ...existente, nombre, articulos: existente.articulos || [] });
+                alert("Contrato guardado.");
+                document.getElementById('adminRegCodigo').value = '';
+                document.getElementById('adminRegNombre').value = '';
+            } catch (e) { console.error(e); }
+        });
+
+        document.getElementById('btnAgregarArticuloContrato').addEventListener('click', async () => {
+            const codigo = document.getElementById('adminArtContrato').value.trim().toUpperCase();
+            const nombreArt = document.getElementById('adminArtNombre').value.trim();
+            const precio = parseFloat(document.getElementById('adminArtPrecio').value);
+            const porcentaje = parseInt(document.getElementById('adminArtPorcentaje').value);
+            const cuotas = parseInt(document.getElementById('adminArtCuotas').value);
+
+            if (!codigo || !nombreArt || !precio || !porcentaje || !cuotas) { alert("Complete los datos del artículo."); return; }
+            if (!contratosDB[codigo]) { alert("El contrato no existe. Créelo primero."); return; }
+
+            const cliente = contratosDB[codigo];
+            const nuevosArticulos = cliente.articulos || [];
+            nuevosArticulos.push({ nombre: nombreArt, precioTotal: precio, porcentajeInicial: porcentaje, totalCuotas: cuotas, cuotasPagadas: 0, historialPagos: {} });
+
+            try {
+                await setDoc(doc(db, "contratos", codigo), { ...cliente, articulos: nuevosArticulos }, { merge: true });
+                alert("¡Artículo añadido con éxito!");
+                document.getElementById('adminArtContrato').value = '';
+                document.getElementById('adminArtNombre').value = '';
+                document.getElementById('adminArtPrecio').value = '';
+            } catch (e) { console.error(e); }
+        });
+
+        function renderTablaAdmin() {
+            const tbody = document.getElementById('tablaAdminContratosApp');
+            tbody.innerHTML = '';
+            for (let codigo in contratosDB) {
+                const c = contratosDB[codigo];
+                let listaArts = (c.articulos || []).map((a, i) => `[${i+1}] ${a.nombre} ($${a.precioTotal})`).join('<br>') || "Sin artículos";
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                            <strong>${codigo}</strong> - ${c.nombre}<br><span style="color:var(--text-muted); font-size:0.75rem;">${listaArts}</span>
+                        </td>
+                        <td style="text-align: right; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                            <button onclick="window.abonar('${codigo}')" style="background: var(--success); color: white; border: none; padding: 0.3rem 0.5rem; border-radius: 4px; font-size: 0.7rem; cursor:pointer;">Abonar</button>
+                            <button onclick="window.eliminar('${codigo}')" style="background: var(--danger); color: white; border: none; padding: 0.3rem 0.5rem; border-radius: 4px; font-size: 0.7rem; margin-left: 2px;">X</button>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        window.abonar = async function(codigo) {
+            const cliente = contratosDB[codigo];
+            if (!cliente.articulos || cliente.articulos.length === 0) { alert("Sin artículos."); return; }
+
+            let texto = "Seleccione el número de artículo:\n";
+            cliente.articulos.forEach((a, i) => texto += `${i+1}. ${a.nombre} (Pagadas: ${a.cuotasPagadas}/${a.totalCuotas})\n`);
+            const idx = parseInt(prompt(texto, "1")) - 1;
+            if (isNaN(idx) || !cliente.articulos[idx]) return;
+
+            const art = cliente.articulos[idx];
+            const historial = art.historialPagos || {};
+            const inicialPagada = historial['inicial'] && historial['inicial'].pagada;
+
+            let tipo = !inicialPagada ? "inicial" : "cuota";
+            const ref = prompt(`Referencia para abonar [${tipo}]:`, "REF-00");
+            if (ref === null) return;
+
+            if (tipo === 'inicial') {
+                historial['inicial'] = { pagada: true, tasa: tasaBcv, referencia: ref.trim() || "Validado" };
+            } else {
+                art.cuotasPagadas += 1;
+                historial[art.cuotasPagadas] = { tasa: tasaBcv, referencia: ref.trim() || "Validado" };
+            }
+            art.historialPagos = historial;
+
+            try {
+                await setDoc(doc(db, "contratos", codigo), cliente, { merge: true });
+                alert("Abono guardado en la nube.");
+            } catch (e) { console.error(e); }
+        };
+
+        window.eliminar = async function(codigo) {
+            if (confirm(`¿Eliminar contrato ${codigo}?`)) {
+                try { await deleteDoc(doc(db, "contratos", codigo)); } catch(e) { console.error(e); }
+            }
+        };
+    </script>
+</body>
+</html>
+
