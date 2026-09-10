@@ -3,19 +3,18 @@
 <head>
     <link rel="manifest" href="./manifest.json">
     <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./pwabuilder-sw.js')
-        .then(reg => console.log('Service Worker registrado con éxito', reg))
-        .catch(err => console.log('Error al registrar el Service Worker', err));
-    });
-  }
-</script>
-
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./pwabuilder-sw.js')
+            .then(reg => console.log('Service Worker registrado con éxito', reg))
+            .catch(err => console.log('Error al registrar el Service Worker', err));
+        });
+      }
+    </script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App de Créditos y Caches</title>
+    <title>App de Créditos y Caches - JoTech</title>
     <style>
         :root {
             --primary: #1e3a8a;
@@ -54,7 +53,6 @@
             margin: 0 auto;
         }
 
-        /* Control de pantallas (Paginación) */
         .screen {
             display: none;
             background: var(--card-bg);
@@ -209,7 +207,7 @@
 
     <div class="container">
 
-        <!-- ================= PANTALLA 1: INGRESO DE CLIENTE ================= -->
+        <!-- PANTALLA 1: INGRESO DE CLIENTE -->
         <div id="screen-login" class="screen active">
             <header>
                 <h1>Portal de Clientes</h1>
@@ -228,8 +226,7 @@
             </div>
         </div>
 
-
-        <!-- ================= PANTALLA 2: PANEL DEL CLIENTE ================= -->
+        <!-- PANTALLA 2: PANEL DEL CLIENTE -->
         <div id="screen-client-panel" class="screen">
             <header>
                 <h1>Hola, <span id="lblNombreCliente" style="color: var(--primary);">Cliente</span></h1>
@@ -269,8 +266,7 @@
             <button type="button" class="btn btn-secondary" id="btnVolverLogin" style="margin-top: 0.5rem;">Cerrar Sesión</button>
         </div>
 
-
-        <!-- ================= PANTALLA 3: LOGIN DE ADMINISTRADOR ================= -->
+        <!-- PANTALLA 3: LOGIN DE ADMINISTRADOR -->
         <div id="screen-admin-login" class="screen">
             <header>
                 <h1>Acceso Administrativo</h1>
@@ -286,8 +282,7 @@
             <button type="button" class="btn btn-secondary" id="btnVolverLoginDesdeAdmin" style="margin-top: 0.5rem;">Volver</button>
         </div>
 
-
-        <!-- ================= PANTALLA 4: PANEL DE ADMINISTRADOR ================= -->
+        <!-- PANTALLA 4: PANEL DE ADMINISTRADOR -->
         <div id="screen-admin-panel" class="screen">
             <header>
                 <h1>Gestión de Contratos</h1>
@@ -308,7 +303,7 @@
                 <div class="form-group" style="margin-bottom: 0.8rem;">
                     <input type="number" id="nuevoTotalCuotas" placeholder="Cantidad Total de Cuotas" value="3">
                 </div>
-                <button type="button" class="btn btn-success" id="btnGuardarContrato">Guardar Contrato</button>
+                <button type="button" class="btn btn-success" id="btnGuardarContrato">Guardar Contrato en la Nube</button>
             </div>
 
             <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Contratos Activos en el Sistema:</h3>
@@ -334,32 +329,45 @@
         </footer>
     </div>
 
-    <script>
-        // Inicializar base de datos local predeterminada o cargar desde localStorage si existe
-        function obtenerBaseDatos() {
-            const data = localStorage.getItem('bd_contratos_empresa');
-            if (data) {
-                return JSON.parse(data);
-            } else {
-                const inicial = {
-                    "C-1001": { nombre: "José Yépez", montoTotal: 300, cuotasPagadas: 1, totalCuotas: 3 },
-                    "C-1002": { nombre: "María Rodríguez", montoTotal: 450, cuotasPagadas: 0, totalCuotas: 4 }
-                };
-                localStorage.setItem('bd_contratos_empresa', JSON.stringify(inicial));
-                return inicial;
-            }
-        }
+    <!-- SCRIPT DE FIREBASE Y LÓGICA DE TIEMPO REAL -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, setDoc, doc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        let contratosDB = obtenerBaseDatos();
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbWF2cTQdwgjaxQqQb3BMPJCKFs0ftEM",
+            authDomain: "jotech-contratos.firebaseapp.com",
+            projectId: "jotech-contratos",
+            storageBucket: "jotech-contratos.firebasestorage.app",
+            messagingSenderId: "109219790720",
+            appId: "1:109219790720:web:84149d0f2199f0adbf0b65"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let contratosDB = {};
         let contratoActualKey = null;
 
-        // Control de pantallas (Paginación interna)
-        function cambiarPantalla(idPantalla) {
+        // Escuchar cambios en Firestore en TIEMPO REAL
+        onSnapshot(collection(db, "contratos"), (snapshot) => {
+            contratosDB = {};
+            snapshot.forEach((docSnap) => {
+                contratosDB[docSnap.id] = docSnap.data();
+            });
+            actualizarTablaAdmin();
+            if (contratoActualKey && contratosDB[contratoActualKey]) {
+                cargarDatosCliente(contratoActualKey);
+            }
+        });
+
+        // Control de pantallas
+        window.cambiarPantalla = function(idPantalla) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(idPantalla).classList.add('active');
         }
 
-        // --- LÓGICA CLIENTE ---
+        // LÓGICA CLIENTE
         document.getElementById('btnLoginCliente').addEventListener('click', () => {
             const codigo = document.getElementById('inputContratoLogin').value.trim().toUpperCase();
             if (contratosDB[codigo]) {
@@ -367,15 +375,16 @@
                 cargarDatosCliente(codigo);
                 cambiarPantalla('screen-client-panel');
             } else {
-                alert("El número de contrato no existe en el sistema.");
+                alert("El número de contrato no existe en el sistema o sincronizando con la nube...");
             }
         });
 
         function cargarDatosCliente(codigo) {
             const cliente = contratosDB[codigo];
+            if (!cliente) return;
             document.getElementById('lblNombreCliente').textContent = cliente.nombre;
             document.getElementById('lblCodigoContrato').textContent = codigo;
-            document.getElementById('lblMontoTotal').textContent = '$' + cliente.montoTotal.toFixed(2);
+            document.getElementById('lblMontoTotal').textContent = '$' + Number(cliente.montoTotal).toFixed(2);
             document.getElementById('lblCuotasPagadas').textContent = cliente.cuotasPagadas;
             
             const pendientes = cliente.totalCuotas - cliente.cuotasPagadas;
@@ -398,7 +407,6 @@
             cambiarPantalla('screen-login');
         });
 
-        // Enviar WhatsApp desde panel de cliente
         document.getElementById('btnEnviarWs').addEventListener('click', () => {
             const referencia = document.getElementById('inputReferencia').value.trim();
             if (!referencia) {
@@ -420,13 +428,11 @@
             mensaje += `📊 *Estado:* Pagó cuota. Le restan ${pendientes - 1 > 0 ? pendientes - 1 : 0} cuotas.%0A`;
             mensaje += `🔢 *Referencia:* ${referencia}%0A`;
 
-            // CONFIGURA TU NÚMERO DE WHATSAPP AQUÍ
             const telefonoEmpresa = "584123456789";
             window.open(`https://api.whatsapp.com/send?phone=${telefonoEmpresa}&text=${mensaje}`, '_blank');
         });
 
-
-        // --- LÓGICA ADMINISTRADOR ---
+        // LÓGICA ADMINISTRADOR
         document.getElementById('linkIrAdmin').addEventListener('click', (e) => {
             e.preventDefault();
             cambiarPantalla('screen-admin-login');
@@ -439,7 +445,6 @@
 
         document.getElementById('btnLoginAdmin').addEventListener('click', () => {
             const pass = document.getElementById('inputAdminPass').value;
-            // Contraseña de administrador configurada estáticamente como ejemplo: "admin123"
             if (pass === "admin123") {
                 document.getElementById('inputAdminPass').value = '';
                 actualizarTablaAdmin();
@@ -453,7 +458,7 @@
             cambiarPantalla('screen-login');
         });
 
-        document.getElementById('btnGuardarContrato').addEventListener('click', () => {
+        document.getElementById('btnGuardarContrato').addEventListener('click', async () => {
             const codigo = document.getElementById('nuevoCodigo').value.trim().toUpperCase();
             const nombre = document.getElementById('nuevoNombre').value.trim();
             const monto = parseFloat(document.getElementById('nuevoMonto').value);
@@ -464,21 +469,23 @@
                 return;
             }
 
-            contratosDB[codigo] = {
-                nombre: nombre,
-                montoTotal: monto,
-                cuotasPagadas: 0,
-                totalCuotas: totalCuotas
-            };
+            try {
+                // Guardar directamente en Firestore usando el código como ID del documento
+                await setDoc(doc(db, "contratos", codigo), {
+                    nombre: nombre,
+                    montoTotal: monto,
+                    cuotasPagadas: 0,
+                    totalCuotas: totalCuotas
+                });
 
-            localStorage.setItem('bd_contratos_empresa', JSON.stringify(contratosDB));
-            actualizarTablaAdmin();
-
-            // Limpiar campos
-            document.getElementById('nuevoCodigo').value = '';
-            document.getElementById('nuevoNombre').value = '';
-            document.getElementById('nuevoMonto').value = '';
-            alert("¡Contrato registrado exitosamente!");
+                alert("¡Contrato guardado en la nube con éxito!");
+                document.getElementById('nuevoCodigo').value = '';
+                document.getElementById('nuevoNombre').value = '';
+                document.getElementById('nuevoMonto').value = '';
+            } catch (error) {
+                console.error("Error al guardar en Firestore: ", error);
+                alert("Hubo un error al guardar el contrato.");
+            }
         });
 
         function actualizarTablaAdmin() {
@@ -491,19 +498,22 @@
                         <td><strong>${codigo}</strong></td>
                         <td>${c.nombre}</td>
                         <td>$${c.montoTotal}</td>
-                        <td><button onclick="eliminarContrato('${codigo}')" style="background: var(--danger); color: white; border: none; padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer;">Eliminar</button></td>
+                        <td><button onclick="window.eliminarContrato('${codigo}')" style="background: var(--danger); color: white; border: none; padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer;">Eliminar</button></td>
                     </tr>
                 `;
             }
         }
 
-        window.eliminarContrato = function(codigo) {
-            if (confirm(`¿Estás seguro de eliminar el contrato ${codigo}?`)) {
-                delete contratosDB[codigo];
-                localStorage.setItem('bd_contratos_empresa', JSON.stringify(contratosDB));
-                actualizarTablaAdmin();
+        window.eliminarContrato = async function(codigo) {
+            if (confirm(`¿Estás seguro de eliminar el contrato ${codigo} de la nube?`)) {
+                try {
+                    await deleteDoc(doc(db, "contratos", codigo));
+                } catch (error) {
+                    console.error("Error al eliminar: ", error);
+                }
             }
         };
     </script>
 </body>
 </html>
+
